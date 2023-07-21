@@ -45,6 +45,7 @@ const (
 	HTTPAttack        = "http"
 	VMAttack          = "vm"
 	UserDefinedAttack = "userDefined"
+	NvGPUAttack       = "nvidia-gpu"
 )
 
 const (
