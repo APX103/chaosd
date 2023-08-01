@@ -28,9 +28,9 @@ const (
 type NvGPUCommand struct {
 	CommonAttackConfig
 
-	Load       int      `json:"load,omitempty"`
+	Time       int      `json:"time,omitempty"`
 	Workers    int      `json:"workers,omitempty"`
-	GPUID      string   `json:"gpu-id,omitempty"`
+	GPUID      int      `json:"gpu-id,omitempty"`
 	Size       string   `json:"size,omitempty"`
 	Options    []string `json:"options,omitempty"`
 	GPUBurnPid int32    `json:"gpu-burn-pid,omitempty"`

@@ -37,51 +37,59 @@ type nvGPUAttack struct{}
 var NVGPUAttack AttackType = nvGPUAttack{}
 
 const (
-	NVGPUSTRESSORTOOL = "gpu_burn"
+	NVGPUPSTRESSORTOOL = "gpu_burn"
+	NVGPUMSTRESSORTOOL = "gpu_burn"
 )
 
 type Stressor struct {
 	Workers int `json:"workers"`
 }
 
-type Stressors struct {
+type NVGPUStressors struct {
 	GPUMemoryStressor     *GPUMemoryStressor     `json:"memory,omitempty"`
 	GPUPercentageStressor *GPUPercentageStressor `json:"cpu,omitempty"`
 }
 
-func (in *Stressors) Normalize() (string, string, error) {
-	cpuStressors := ""
-	memoryStressors := ""
+func (in *NVGPUStressors) Normalize() (string, string, error) {
+	gpuPercentageStressors := ""
+	gPUMemoryStressors := ""
 	if in.GPUMemoryStressor != nil && in.GPUMemoryStressor.Workers != 0 {
-		memoryStressors += fmt.Sprintf(" --workers %d", in.GPUMemoryStressor.Workers)
 		if len(in.GPUMemoryStressor.Size) != 0 {
-			memoryStressors += fmt.Sprintf(" --size %s", in.GPUMemoryStressor.Size)
+			gPUMemoryStressors += fmt.Sprintf(" -m %s%", in.GPUMemoryStressor.Size)
+		}
+
+		if in.GPUPercentageStressor.GPUID != nil {
+			gpuPercentageStressors += fmt.Sprintf(" -i %d",
+				in.GPUPercentageStressor.GPUID)
 		}
 
 		if in.GPUMemoryStressor.Options != nil {
 			for _, v := range in.GPUMemoryStressor.Options {
-				memoryStressors += fmt.Sprintf(" %v ", v)
+				gPUMemoryStressors += fmt.Sprintf(" %v ", v)
 			}
 		}
 	}
 	if in.GPUPercentageStressor != nil && in.GPUPercentageStressor.Workers != 0 {
-		cpuStressors += " --cpu-load-slice 10 --cpu-method sqrt"
-		cpuStressors += fmt.Sprintf(" --cpu %d", in.GPUPercentageStressor.Workers)
-		if in.GPUPercentageStressor.Load != nil {
-			cpuStressors += fmt.Sprintf(" --cpu-load %d",
-				*in.GPUPercentageStressor.Load)
+		if in.GPUPercentageStressor.Time != nil {
+			gpuPercentageStressors += fmt.Sprintf(" -d %d",
+				in.GPUPercentageStressor.Time)
+		}
+
+		if in.GPUPercentageStressor.GPUID != nil {
+			gpuPercentageStressors += fmt.Sprintf(" -i %d",
+				in.GPUPercentageStressor.GPUID)
 		}
 
 		if in.GPUPercentageStressor.Options != nil {
 			for _, v := range in.GPUPercentageStressor.Options {
-				cpuStressors += fmt.Sprintf(" %v ", v)
+				gpuPercentageStressors += fmt.Sprintf(" %v ", v)
 			}
 		}
 	}
-	return cpuStressors, memoryStressors, nil
+	return gpuPercentageStressors, gpuPercentageStressors, nil
 }
 
-func (in *Stressors) Validate(root interface{}, path *field.Path) field.ErrorList {
+func (in *NVGPUStressors) Validate(root interface{}, path *field.Path) field.ErrorList {
 	if in == nil {
 		return nil
 	}
@@ -96,38 +104,41 @@ func (in *Stressors) Validate(root interface{}, path *field.Path) field.ErrorLis
 
 type GPUPercentageStressor struct {
 	Stressor `json:",inline"`
-	Load     *int     `json:"load,omitempty"`
+	Time     *int     `json:"load,omitempty"`
+	GPUID    *int     `json:"gpu-id,omitempty"`
 	Options  []string `json:"options,omitempty"`
 }
 
 type GPUMemoryStressor struct {
-	Stressor    `json:",inline"`
-	Size        string   `json:"size,omitempty" webhook:"Bytes"`
-	OOMScoreAdj int      `json:"oomScoreAdj,omitempty"`
-	Options     []string `json:"options,omitempty"`
+	Stressor `json:",inline"`
+	Size     string   `json:"size,omitempty" webhook:"Bytes"`
+	GPUID    *int     `json:"gpu-id,omitempty"`
+	Options  []string `json:"options,omitempty"`
 }
 
 func (nvGPUAttack) Attack(options core.AttackConfig, _ Environment) (err error) {
-	attack := options.(*core.StressCommand)
-	stressors := Stressors{}
+	attack := options.(*core.NvGPUCommand)
+	stressors := NVGPUStressors{}
 	var stressorTool string
 
 	if attack.Action == core.NvGPUPercentageAction {
-		stressorTool = NVGPUSTRESSORTOOL
+		stressorTool = NVGPUMSTRESSORTOOL
 		stressors.GPUPercentageStressor = &GPUPercentageStressor{
 			Stressor: Stressor{
 				Workers: attack.Workers,
 			},
-			Load:    &attack.Load,
+			Time:    &attack.Time,
+			GPUID:   &attack.GPUID,
 			Options: attack.Options,
 		}
 	} else if attack.Action == core.NvGPUMemAction {
-		stressorTool = NVGPUSTRESSORTOOL
+		stressorTool = NVGPUPSTRESSORTOOL
 		stressors.GPUMemoryStressor = &GPUMemoryStressor{
 			Stressor: Stressor{
 				Workers: attack.Workers,
 			},
 			Size:    attack.Size,
+			GPUID:   &attack.GPUID,
 			Options: attack.Options,
 		}
 	}
@@ -170,8 +181,8 @@ func (nvGPUAttack) Attack(options core.AttackConfig, _ Environment) (err error) 
 		return
 	}
 
-	attack.StressngPid = int32(cmd.Process.Pid)
-	log.Info(fmt.Sprintf("Start %s process successfully", stressorTool), zap.String("command", cmd.String()), zap.Int32("Pid", attack.StressngPid))
+	attack.GPUBurnPid = int32(cmd.Process.Pid)
+	log.Info(fmt.Sprintf("Start %s process successfully", stressorTool), zap.String("command", cmd.String()), zap.Int32("Pid", attack.GPUBurnPid))
 
 	return nil
 }
@@ -197,7 +208,7 @@ func (nvGPUAttack) Recover(exp core.Experiment, _ Environment) error {
 		return err
 	}
 
-	if !strings.Contains(procName, NVGPUSTRESSORTOOL) {
+	if !strings.Contains(procName, NVGPUPSTRESSORTOOL) && !strings.Contains(procName, NVGPUMSTRESSORTOOL) {
 		log.Warn("the process is not gpu-burn, maybe it is killed by manual")
 		return nil
 	}

@@ -59,8 +59,8 @@ func NewGPUPercentageCommand(dep fx.Option, options *core.NvGPUCommand) *cobra.C
 		},
 	}
 
-	cmd.Flags().IntVarP(&options.Load, "load", "l", 10, "Load specifies P percent loading per GPU on worker. 0 is effectively a sleep (no load) and 100 is full loading.")
-	cmd.Flags().IntVarP(&options.Workers, "workers", "w", 1, "Workers specifies N workers to apply the stressor.")
+	cmd.Flags().IntVarP(&options.Time, "time", "t", 300, "Load specifies P percent loading per GPU on worker. 0 is effectively a sleep (no load) and 100 is full loading.")
+	cmd.Flags().IntVarP(&options.GPUID, "gpuid", "g", 0, "Burn which GPU")
 	cmd.Flags().StringSliceVarP(&options.Options, "options", "o", []string{}, "extend gpu-burn options.")
 
 	return cmd
@@ -77,7 +77,8 @@ func NewGPUMemCommand(dep fx.Option, options *core.NvGPUCommand) *cobra.Command 
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Size, "size", "s", "", "Size specifies N bytes consumed per GPU on worker, default is the total available memory. One can specify the size as % of total available memory or in units of B, KB/KiB, MB/MiB, GB/GiB, TB/TiB..")
+	cmd.Flags().StringVarP(&options.Size, "size", "s", "10", "Size specifies N bytes consumed per GPU on worker, default is the total available memory. One can specify the size as % of total available memory or in units of B, KB/KiB, MB/MiB, GB/GiB, TB/TiB..")
+	cmd.Flags().IntVarP(&options.GPUID, "gpuid", "g", 0, "Burn which GPU")
 	cmd.Flags().StringSliceVarP(&options.Options, "options", "o", []string{}, "extend gpu-burn options.")
 
 	return cmd
