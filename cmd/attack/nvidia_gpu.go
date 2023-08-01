@@ -84,7 +84,7 @@ func NewGPUMemCommand(dep fx.Option, options *core.NvGPUCommand) *cobra.Command 
 	return cmd
 }
 
-func NvGPUAttackF(chaos *chaosd.Server, options *core.StressCommand) {
+func NvGPUAttackF(chaos *chaosd.Server, options *core.NvGPUCommand) {
 	if err := options.Validate(); err != nil {
 		utils.ExitWithError(utils.ExitBadArgs, err)
 	}

@@ -130,7 +130,7 @@ func GetAttackByKind(kind string) *AttackConfig {
 	case UserDefinedAttack:
 		attackConfig = &UserDefinedOption{}
 	case NvGPUAttack:
-		attackConfig = &NetworkCommand{}
+		attackConfig = &NvGPUCommand{}
 	default:
 		return nil
 	}
