@@ -51,6 +51,7 @@ type NVGPUStressors struct {
 }
 
 func (in *NVGPUStressors) Normalize() (string, string, error) {
+	log.Info("Nomalizing")
 	gpuPercentageStressors := ""
 	gPUMemoryStressors := ""
 	if in.GPUMemoryStressor != nil && in.GPUMemoryStressor.Workers != 0 {
@@ -58,7 +59,7 @@ func (in *NVGPUStressors) Normalize() (string, string, error) {
 			gPUMemoryStressors += fmt.Sprintf(" -m %s%", in.GPUMemoryStressor.Size)
 		}
 
-		if in.GPUPercentageStressor.GPUID != nil {
+		if in.GPUPercentageStressor.GPUID != -1 {
 			gpuPercentageStressors += fmt.Sprintf(" -i %d",
 				in.GPUPercentageStressor.GPUID)
 		}
@@ -70,12 +71,12 @@ func (in *NVGPUStressors) Normalize() (string, string, error) {
 		}
 	}
 	if in.GPUPercentageStressor != nil && in.GPUPercentageStressor.Workers != 0 {
-		if in.GPUPercentageStressor.Time != nil {
+		if in.GPUPercentageStressor.Time != -1 {
 			gpuPercentageStressors += fmt.Sprintf(" -d %d",
 				in.GPUPercentageStressor.Time)
 		}
 
-		if in.GPUPercentageStressor.GPUID != nil {
+		if in.GPUPercentageStressor.GPUID != -1 {
 			gpuPercentageStressors += fmt.Sprintf(" -i %d",
 				in.GPUPercentageStressor.GPUID)
 		}
@@ -86,6 +87,8 @@ func (in *NVGPUStressors) Normalize() (string, string, error) {
 			}
 		}
 	}
+	log.Info(gpuPercentageStressors)
+	log.Info(gpuPercentageStressors)
 	return gpuPercentageStressors, gpuPercentageStressors, nil
 }
 
@@ -104,15 +107,15 @@ func (in *NVGPUStressors) Validate(root interface{}, path *field.Path) field.Err
 
 type GPUPercentageStressor struct {
 	Stressor `json:",inline"`
-	Time     *int     `json:"load,omitempty"`
-	GPUID    *int     `json:"gpu-id,omitempty"`
+	Time     int      `json:"load,omitempty"`
+	GPUID    int      `json:"gpu-id,omitempty"`
 	Options  []string `json:"options,omitempty"`
 }
 
 type GPUMemoryStressor struct {
 	Stressor `json:",inline"`
 	Size     string   `json:"size,omitempty" webhook:"Bytes"`
-	GPUID    *int     `json:"gpu-id,omitempty"`
+	GPUID    int      `json:"gpu-id,omitempty"`
 	Options  []string `json:"options,omitempty"`
 }
 
@@ -127,8 +130,7 @@ func (nvGPUAttack) Attack(options core.AttackConfig, _ Environment) (err error) 
 			Stressor: Stressor{
 				Workers: attack.Workers,
 			},
-			Time:    &attack.Time,
-			GPUID:   &attack.GPUID,
+			Time:    attack.Time,
 			Options: attack.Options,
 		}
 	} else if attack.Action == core.NvGPUMemAction {
@@ -138,18 +140,18 @@ func (nvGPUAttack) Attack(options core.AttackConfig, _ Environment) (err error) 
 				Workers: attack.Workers,
 			},
 			Size:    attack.Size,
-			GPUID:   &attack.GPUID,
 			Options: attack.Options,
 		}
 	}
 
 	var stressorsStr string
-	if attack.Action == core.StressCPUAction {
+	log.Info(attack.Action)
+	if attack.Action == core.NvGPUPercentageAction {
 		stressorsStr, _, err = stressors.Normalize()
 		if err != nil {
 			return
 		}
-	} else if attack.Action == core.StressMemAction {
+	} else if attack.Action == core.NvGPUMemAction {
 		_, stressorsStr, err = stressors.Normalize()
 		if err != nil {
 			return
@@ -162,7 +164,6 @@ func (nvGPUAttack) Attack(options core.AttackConfig, _ Environment) (err error) 
 	}
 
 	log.Info("stressors normalize", zap.String("arguments", stressorsStr))
-
 	cmd := bpm.DefaultProcessBuilder(stressorTool, strings.Fields(stressorsStr)...).
 		Build(context.Background())
 
