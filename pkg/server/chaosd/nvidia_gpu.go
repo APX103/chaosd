@@ -53,32 +53,29 @@ type NVGPUStressors struct {
 func (in *NVGPUStressors) Normalize() (string, string, error) {
 	log.Info("Nomalizing")
 	gpuPercentageStressors := ""
-	gPUMemoryStressors := ""
+	gpuMemoryStressors := ""
 	if in.GPUMemoryStressor != nil && in.GPUMemoryStressor.Workers != 0 {
 		if len(in.GPUMemoryStressor.Size) != 0 {
-			gPUMemoryStressors += fmt.Sprintf(" -m %s%", in.GPUMemoryStressor.Size)
+			gpuMemoryStressors += fmt.Sprintf(" -m %s%", in.GPUMemoryStressor.Size)
 		}
 
 		if in.GPUPercentageStressor.GPUID != -1 {
-			gpuPercentageStressors += fmt.Sprintf(" -i %d",
-				in.GPUPercentageStressor.GPUID)
+			gpuMemoryStressors += fmt.Sprintf(" -i %d", in.GPUMemoryStressor.GPUID)
 		}
 
 		if in.GPUMemoryStressor.Options != nil {
 			for _, v := range in.GPUMemoryStressor.Options {
-				gPUMemoryStressors += fmt.Sprintf(" %v ", v)
+				gpuMemoryStressors += fmt.Sprintf(" %v ", v)
 			}
 		}
 	}
 	if in.GPUPercentageStressor != nil && in.GPUPercentageStressor.Workers != 0 {
 		if in.GPUPercentageStressor.Time != -1 {
-			gpuPercentageStressors += fmt.Sprintf(" %d",
-				in.GPUPercentageStressor.Time)
+			gpuPercentageStressors += fmt.Sprintf(" %d", in.GPUPercentageStressor.Time)
 		}
 
 		if in.GPUPercentageStressor.GPUID != -1 {
-			gpuPercentageStressors += fmt.Sprintf(" -i %d",
-				in.GPUPercentageStressor.GPUID)
+			gpuPercentageStressors += fmt.Sprintf(" -i %d", in.GPUPercentageStressor.GPUID)
 		}
 
 		if in.GPUPercentageStressor.Options != nil {
@@ -88,8 +85,8 @@ func (in *NVGPUStressors) Normalize() (string, string, error) {
 		}
 	}
 	log.Info(gpuPercentageStressors)
-	log.Info(gpuPercentageStressors)
-	return gpuPercentageStressors, gpuPercentageStressors, nil
+	log.Info(gpuMemoryStressors)
+	return gpuPercentageStressors, gpuMemoryStressors, nil
 }
 
 func (in *NVGPUStressors) Validate(root interface{}, path *field.Path) field.ErrorList {
