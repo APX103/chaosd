@@ -72,7 +72,7 @@ func (in *NVGPUStressors) Normalize() (string, string, error) {
 	}
 	if in.GPUPercentageStressor != nil && in.GPUPercentageStressor.Workers != 0 {
 		if in.GPUPercentageStressor.Time != -1 {
-			gpuPercentageStressors += fmt.Sprintf(" -d %d",
+			gpuPercentageStressors += fmt.Sprintf(" %d",
 				in.GPUPercentageStressor.Time)
 		}
 
@@ -194,6 +194,7 @@ func (nvGPUAttack) Recover(exp core.Experiment, _ Environment) error {
 		return err
 	}
 	attack := config.(*core.NvGPUCommand)
+	log.Info("gpu-burn PID", zap.Int32("pid", attack.GPUBurnPid))
 	proc, err := process.NewProcess(attack.GPUBurnPid)
 	if err != nil {
 		log.Warn("Failed to get process", zap.Error(err))
